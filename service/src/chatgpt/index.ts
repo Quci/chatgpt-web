@@ -1,5 +1,7 @@
 import * as dotenv from 'dotenv'
 import 'isomorphic-fetch'
+import { AzureOpenAI } from 'openai'
+import type { OpenAI } from 'openai'
 import type { ChatGPTAPIOptions, ChatMessage, SendMessageOptions } from 'chatgpt'
 import { ChatGPTAPI, ChatGPTUnofficialProxyAPI } from 'chatgpt'
 import { SocksProxyAgent } from 'socks-proxy-agent'
@@ -98,7 +100,89 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
   }
 })()
 
+const azureConfig = {
+  // 根据自己情况填写： azure endpoint
+  endpoint: 'https://xxxxx.openai.azure.com',
+  // 根据自己情况填写： apiKey
+  apiKey: 'xxxxxxxx',
+  // 根据自己情况填写： apiVersion
+  apiVersion: '2024-05-01-preview',
+  // 根据自己情况填写： deployment
+  deployment: 'gpt-4o',
+}
+
+function convertOpenAIChatCompletionToChatMessage(openAICompletion: OpenAI.ChatCompletion): ChatMessage {
+  const firstChoice = openAICompletion.choices[0] // Assuming there is only one choice
+
+  return {
+    id: openAICompletion.id,
+    text: firstChoice.message.content,
+    role: firstChoice.message.role,
+    detail: {
+      finish_reason: firstChoice.finish_reason,
+      created: openAICompletion.created,
+      model: openAICompletion.model,
+      index: firstChoice.index,
+    },
+    parentMessageId: openAICompletion.id,
+    conversationId: `${openAICompletion.id}-conv`,
+  }
+}
+
+function convertRequestOptionsToChatCompletionCreateParams(options: RequestOptions): OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = []
+
+  if (options.systemMessage) {
+    messages.push({
+      role: 'system',
+      content: options.systemMessage,
+    })
+  }
+
+  messages.push({
+    role: 'user',
+    content: options.message,
+  })
+
+  // 添加 lastContext 到最后一条消息中
+  if (options.lastContext) {
+    const lastMessageIndex = messages.length - 1
+    messages[lastMessageIndex] = {
+      ...messages[lastMessageIndex],
+      ...options.lastContext,
+    }
+  }
+
+  return {
+    messages,
+    model: 'your_model_id_here', // 替换为实际的模型 ID 或对象
+    temperature: options.temperature ?? null,
+    top_p: options.top_p ?? null,
+    // 其他属性根据需要添加
+  }
+}
+
 async function chatReplyProcess(options: RequestOptions) {
+  const client = new AzureOpenAI(
+    azureConfig,
+  )
+  global.console.log('start request')
+
+  const body = convertRequestOptionsToChatCompletionCreateParams(options)
+
+  try {
+    const result = await client.chat.completions.create(body)
+
+    global.console.log('result', result)
+    options.process(convertOpenAIChatCompletionToChatMessage(result))
+  }
+  catch (error) {
+    global.console.log('error', error)
+    return error
+  }
+}
+
+async function _chatReplyProcess(options: RequestOptions) {
   const { message, lastContext, process, systemMessage, temperature, top_p } = options
   try {
     let options: SendMessageOptions = { timeoutMs }
