@@ -1,5 +1,12 @@
 {
   "root": true,
-  "ignorePatterns": ["build"],
-  "extends": ["@antfu"]
+//  "ignorePatterns": ["build"],
+//  "extends": ["@antfu"],
+	"parserOptions": {
+		"ecmaVersion": 2020,
+		"sourceType": "module"
+	},
+	"rules": {
+		"no-console": "off"
+	}
 }
