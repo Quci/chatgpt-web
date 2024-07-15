@@ -53,17 +53,14 @@ function convertOpenAIChatCompletionToChatMessage(openAICompletion: OpenAI.ChatC
 }
 
 function convertRequestOptionsToChatCompletionCreateParams(options: RequestOptions): OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming {
-	const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-		options.systemMessage && { role: 'system', content: options.systemMessage },
-		{ role: 'user', content: options.message }
-	].filter(Boolean)
-
-	if (options.lastContext) {
-		messages[messages.length - 1] = { ...messages[messages.length - 1], ...options.lastContext }
+	if(!options.messages?.length) {
+		console.log('empty messages')
+		return
 	}
 
 	return {
-		messages,
+		// @ts-ignore
+		messages: options.messages,
 		model: 'your_model_id_here', // 替换为实际的模型 ID 或对象
 		temperature: options.temperature ?? null,
 		top_p: options.top_p ?? null,
@@ -88,7 +85,8 @@ async function chatReplyProcess(options: RequestOptions) {
 		options.process && options.process(convertOpenAIChatCompletionToChatMessage(response.data))
 
 	} catch (error) {
-		console.error("Error calling Azure OpenAI:", error)
+		options.process('done' as unknown as any)
+		console.error("Error calling Azure OpenAI:", error.toString())
 	}
 }
 

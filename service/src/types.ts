@@ -1,6 +1,7 @@
 import type { FetchFn } from 'chatgpt'
 
 export interface RequestProps {
+	messages: {role: string, content: string}[]
   prompt: string
   options?: ChatContext
   systemMessage: string

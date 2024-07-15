@@ -22,6 +22,7 @@ export function fetchChatConfig<T = any>() {
 
 export function fetchChatAPIProcess<T = any>(
   params: {
+		messages: {role: string, content: string}[],
     prompt: string
     options?: { conversationId?: string; parentMessageId?: string }
     signal?: GenericAbortSignal
@@ -29,8 +30,8 @@ export function fetchChatAPIProcess<T = any>(
 ) {
   const settingStore = useSettingStore()
   const authStore = useAuthStore()
-
   let data: Record<string, any> = {
+		messages: params.messages,
     prompt: params.prompt,
     options: params.options,
   }

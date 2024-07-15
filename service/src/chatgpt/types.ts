@@ -2,6 +2,7 @@ import type { ChatMessage } from 'chatgpt'
 import type fetch from 'node-fetch'
 
 export interface RequestOptions {
+	messages: {role: string, content: string}[]
   message: string
   lastContext?: { conversationId?: string; parentMessageId?: string }
   process?: (chat: ChatMessage) => void

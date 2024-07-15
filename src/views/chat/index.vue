@@ -114,8 +114,36 @@ async function onConversation() {
 	try {
 		let lastText = ''
 		const fetchChatAPIOnce = async () => {
+			const messages = [
+				{
+					role: 'system',
+					content: 'You are a helpful assistant'
+				}
+			]
+			conversationList.value.forEach((item, index) => {
+				if(item.requestOptions.prompt) {
+					messages.push({
+						role: 'user',
+						content: item.requestOptions.prompt
+					})
+				}
+
+				if(item.text) {
+					messages.push({
+						role: 'assistant',
+						content: item.text
+					})
+				}
+			})
+
+			messages.push({
+				role: 'user',
+				content: message
+			})
+
 			await fetchChatAPIProcess<Chat.ConversationResponse>({
 				prompt: message,
+				messages,
 				options,
 				signal: controller.signal,
 				onDownloadProgress: ({ event }) => {
